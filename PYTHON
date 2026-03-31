@@ -1,0 +1,46 @@
+import random
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+import pickle
+
+symptoms = [
+    "fever and cough", "headache and nausea", "chest pain", 
+    "sore throat and fever", "joint pain and swelling"
+]
+labels = [
+    "Common Cold", "Migraine", "Heart Problem", 
+    "Flu", "Arthritis"
+]
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(symptoms)
+classifier = MultinomialNB()
+classifier.fit(X, labels)
+
+with open("symptom_vec.pkl", "wb") as v_file, open("symptom_clf.pkl", "wb") as c_file:
+    pickle.dump(vectorizer, v_file)
+    pickle.dump(classifier, c_file)
+def chatbot_response(user_input):
+    with open("symptom_vec.pkl", "rb") as v_file, open("symptom_clf.pkl", "rb") as c_file:
+        vectorizer = pickle.load(v_file)
+        classifier = pickle.load(c_file)
+        
+    input_vec = vectorizer.transform([user_input])
+    prediction = classifier.predict(input_vec)[0]
+    
+    advice = {
+        "Common Cold": "It seems like you might have a common cold. Rest and drink fluids.",
+        "Migraine": "You may be experiencing a migraine. Consider resting in a dark, quiet room.",
+        "Heart Problem": "Chest pain can be serious. Please seek emergency medical help immediately.",
+        "Flu": "You might have the flu. Monitoring temperature and consulting a doctor is advised.",
+        "Arthritis": "Joint pain might be arthritis. Please consult a healthcare professional for diagnosis."
+    }
+    
+    return f"Diagnosis: {prediction}\nAdvice: {advice.get(prediction, 'Please consult a doctor for more information.')}"
+print("Welcome to Healthcare Chatbot! Type your symptoms or 'exit' to quit.")
+while True:
+    user_input = input("You: ").lower()
+    if user_input == "exit":
+        print("Chatbot: Thank you! Stay healthy.")
+        break
+    response = chatbot_response(user_input)
+    print(f"Chatbot: {response}")
